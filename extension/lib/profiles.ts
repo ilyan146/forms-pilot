@@ -10,7 +10,8 @@ export type FormProfile = {
   name: string;
   /** Chrome match patterns. A pattern without a port matches every port. */
   matches: string[];
-  fields: Record<string, { label?: string; hint?: string; example?: string }>;
+  /** A better label when the page's own is unclear, and a hint on where to find the value. */
+  fields: Record<string, { label?: string; hint?: string }>;
   /** Field ids that must never be filled, such as a captcha or a consent box. */
   ignore?: string[];
 };
@@ -20,21 +21,11 @@ const sampleInvoice: FormProfile = {
   name: "Sample invoice registration",
   matches: ["http://localhost/sample-form*", "http://127.0.0.1/sample-form*"],
   fields: {
-    supplier_name: { hint: "The company that issued the invoice.", example: "Acme Dredging B.V." },
-    invoice_number: { example: "INV-2026-0042" },
-    invoice_date: { hint: "Return as YYYY-MM-DD.", example: "2026-10-28" },
-    due_date: { hint: "Return as YYYY-MM-DD.", example: "2026-11-27" },
-    currency: { example: "EUR" },
-    total_amount: {
-      hint: "Total including VAT, digits with a dot as decimal separator.",
-      example: "12500.00",
-    },
-    vat_number: { example: "NL123456789B01" },
-    iban: { hint: "The supplier's bank account, without spaces.", example: "NL91ABNA0417164300" },
-    payment_terms: { example: "30 days" },
-    po_reference: { example: "PO-77812" },
-    notes: { example: "Mobilisation of equipment, phase 1." },
-    urgent: { example: "no" },
+    supplier_name: { hint: "The company that issued the invoice." },
+    invoice_date: { hint: "Return as YYYY-MM-DD." },
+    due_date: { hint: "Return as YYYY-MM-DD." },
+    total_amount: { hint: "Total including VAT, digits with a dot as decimal separator." },
+    iban: { hint: "The supplier's bank account, without spaces." },
   },
 };
 

@@ -1,2 +1,11 @@
 packages:
   - extension
+# @hey-api/openapi-ts 0.99.0 prints code with the legacy TypeScript compiler API,
+# which TypeScript 7 no longer ships. The patch points it at an alias of TS 6.
+# Remove both when upgrading to a generator that no longer needs the old API.
+packageExtensions:
+  "@hey-api/openapi-ts@0.99.0":
+    dependencies:
+      typescript-legacy: npm:typescript@6.0.3
+patchedDependencies:
+  "@hey-api/openapi-ts@0.99.0": patches/@hey-api__openapi-ts@0.99.0.patch

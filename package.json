@@ -4,10 +4,11 @@
   "type": "module",
   "packageManager": "pnpm@12.15.0",
   "scripts": {
+    "gen:api": "uv run --directory server python -m forms_pilot.export_openapi openapi.json && pnpm --filter @forms-pilot/extension gen:api",
     "dev:server": "uv run --directory server uvicorn forms_pilot.main:app --reload --port 8000",
-    "dev:extension": "pnpm --filter @forms-pilot/extension dev",
-    "build": "pnpm --filter @forms-pilot/extension build",
-    "typecheck": "pnpm -r typecheck && uv run --directory server basedpyright",
+    "dev:extension": "pnpm gen:api && pnpm --filter @forms-pilot/extension dev",
+    "build": "pnpm gen:api && pnpm --filter @forms-pilot/extension build",
+    "typecheck": "pnpm gen:api && pnpm -r typecheck && uv run --directory server basedpyright",
     "test": "pnpm -r --if-present test && uv run --directory server pytest -q",
     "lint:python": "uv run --directory server ruff check . && uv run --directory server ruff format --check ."
   }
