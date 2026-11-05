@@ -218,3 +218,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / extension
+node_modules/
+.output/
+.wxt/
+web-ext.config.ts
+*.tsbuildinfo
+
+# The Python template above ignores every lib/ folder; the extension's source lives in one.
+!extension/lib/
+
+# Generated from the FastAPI app by pnpm gen:api
+server/openapi.json
+extension/lib/client/
+
