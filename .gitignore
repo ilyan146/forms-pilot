@@ -226,3 +226,6 @@ node_modules/
 web-ext.config.ts
 *.tsbuildinfo
 
+# The Python template above ignores every lib/ folder; the extension's source lives in one.
+!extension/lib/
+

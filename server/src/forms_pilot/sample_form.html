@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sample invoice registration</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; color: #0f172a; }
+      form { display: grid; gap: 0.9rem; }
+      label, legend { font-weight: 600; font-size: 0.9rem; }
+      input, select, textarea { display: block; width: 100%; padding: 0.4rem; margin-top: 0.25rem; box-sizing: border-box; }
+      input[type="radio"], input[type="checkbox"] { display: inline; width: auto; }
+      fieldset { border: 1px solid #cbd5e1; padding: 0.6rem; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Invoice registration</h1>
+    <p>A stand-in for the real target form. It uses the label styles real forms use.</p>
+    <form id="invoice" onsubmit="event.preventDefault(); alert('Submitted');">
+      <label for="supplier_name">Supplier name *</label>
+      <input id="supplier_name" required />
+
+      <div class="row">
+        <label>Invoice number * <input name="invoice_number" required /></label>
+        <label>PO reference <input name="po_reference" /></label>
+      </div>
+
+      <div class="row">
+        <div>
+          <span id="invoice_date_label">Invoice date</span>
+          <input id="invoice_date" type="date" aria-labelledby="invoice_date_label" required />
+        </div>
+        <label>Due date <input id="due_date" type="date" /></label>
+      </div>
+
+      <div class="row">
+        <label>Currency
+          <select id="currency" required>
+            <option value="">Choose…</option>
+            <option value="EUR">Euro</option>
+            <option value="USD">US dollar</option>
+            <option value="AED">UAE dirham</option>
+          </select>
+        </label>
+        <input id="total_amount" type="number" step="0.01" aria-label="Total amount (incl. VAT)" required />
+      </div>
+
+      <input id="vat_number" placeholder="Supplier VAT number" />
+      <label for="iban">IBAN</label>
+      <input id="iban" />
+
+      <fieldset>
+        <legend>Payment terms</legend>
+        <label><input type="radio" name="payment_terms" value="14" /> 14 days</label>
+        <label><input type="radio" name="payment_terms" value="30" /> 30 days</label>
+        <label><input type="radio" name="payment_terms" value="60" /> 60 days</label>
+      </fieldset>
+
+      <label><input type="checkbox" id="urgent" /> Urgent payment</label>
+      <label for="notes">Notes</label>
+      <textarea id="notes" rows="3"></textarea>
+
+      <input type="hidden" name="csrf" value="not-a-field" />
+      <button type="submit">Submit</button>
+    </form>
+  </body>
+</html>
