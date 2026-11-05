@@ -14,7 +14,7 @@ It has two parts:
 
 ## Run locally
 
-Copy `.env.example` to `.env` and fill in an Azure OpenAI endpoint, key and a vision-capable chat deployment. Without them the API still starts, and `/api/extract` answers 503.
+Copy `.env.example` to `.env` and fill in an Azure OpenAI endpoint, key and a vision-capable chat deployment. Without them the API still starts, and `/api/extract` answers 503. The example turns on `DEV_MODE`, which serves the sample form and lets the extension call the API without a token.
 
 ```powershell
 pnpm install
@@ -56,6 +56,27 @@ The extension never submits a form. Filling only changes field values.
 The server then checks every value with plain code: dates must exist and be `YYYY-MM-DD`, choices must be one the form offers, numbers must parse, and IBANs must pass their checksum. Anything that fails becomes an issue the user sees before filling.
 
 There is no confidence score. A model's own confidence is not a reliable measure of whether a value is right, so the side panel flags fields based on these checks and the model's status instead.
+
+## Share it with colleagues
+
+### Run the API
+
+Build the image from `server/` and run it anywhere that gives it HTTPS, such as Azure Container Apps:
+
+```powershell
+docker build -t forms-pilot-api server
+docker run -p 8000:8000 --env-file .env forms-pilot-api
+```
+
+On a deployed server, leave `DEV_MODE` unset and give every person their own token in `API_TOKENS` (`name:token`, comma-separated, at least 32 characters each). Without tokens the API refuses every extraction. To take someone's access away, remove their entry and restart. Each person can make `RATE_LIMIT_PER_MINUTE` extractions a minute (10 by default). The limit is kept in memory, so it applies per server process.
+
+The API does not need CORS settings: the extension's side panel calls it with a host permission, which browsers exempt from CORS, and web pages are not meant to call it.
+
+### Install the extension
+
+Set `WXT_API_URL` in `extension/.env` to the API's URL, then run `pnpm zip`. Share the zip from `extension/.output`. Each colleague unzips it, opens `chrome://extensions` or `edge://extensions`, turns on Developer mode and chooses **Load unpacked**. For updates without manual steps, publish it as an unlisted item on the Chrome Web Store or Edge Add-ons.
+
+The first time, open the side panel, choose **Settings** and paste the personal token.
 
 ## Checks
 

@@ -1,14 +1,16 @@
 import base64
+from collections.abc import Callable
 
 import httpx2
 import openai
 import pytest
 from fastapi.testclient import TestClient
 
+from forms_pilot.api.caller import reset_rate_limits
 from forms_pilot.extraction.model import get_extractor
 from forms_pilot.extraction.schema import FormField, ImageInput, ModelAnswer, ModelValue
 from forms_pilot.main import app
-from forms_pilot.settings import Settings, get_settings
+from forms_pilot.settings import Settings
 
 PIXEL = base64.b64encode(b"\x89PNG fake bytes").decode()
 REQUEST = {
@@ -20,8 +22,16 @@ REQUEST = {
 }
 
 
+TOKEN = "t" * 40
+
+
+SettingsOverride = Callable[..., Settings]
+
+
 @pytest.fixture
-def client():
+def client(use_settings: SettingsOverride):
+    reset_rate_limits()
+    _ = use_settings()
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -93,10 +103,10 @@ def test_rejects_requests_without_images(client: TestClient) -> None:
     assert client.post("/api/extract", json={**REQUEST, "images": []}).status_code == 422
 
 
-def test_reports_unconfigured_model_as_unavailable(client: TestClient) -> None:
-    app.dependency_overrides[get_settings] = lambda: Settings(
-        azure_openai_endpoint=None, azure_openai_api_key=None, azure_openai_deployment=None
-    )
+def test_reports_unconfigured_model_as_unavailable(
+    client: TestClient, use_settings: SettingsOverride
+) -> None:
+    _ = use_settings(azure_openai_endpoint=None)
 
     response = client.post("/api/extract", json=REQUEST)
 
@@ -121,3 +131,41 @@ def test_model_failure_is_a_generic_502(client: TestClient) -> None:
 
     assert response.status_code == 502
     assert response.json() == {"detail": "The model could not read the images."}
+
+
+def test_requires_a_valid_token_once_tokens_are_set(
+    client: TestClient, use_settings: SettingsOverride
+) -> None:
+    use_model(ModelAnswer(values=[]))
+    _ = use_settings(api_tokens=f"alice:{TOKEN}")
+
+    missing = client.post("/api/extract", json=REQUEST)
+    wrong = client.post(
+        "/api/extract", json=REQUEST, headers={"Authorization": "Bearer " + "x" * 40}
+    )
+    valid = client.post("/api/extract", json=REQUEST, headers={"Authorization": f"Bearer {TOKEN}"})
+
+    assert (missing.status_code, wrong.status_code, valid.status_code) == (401, 401, 200)
+
+
+def test_refuses_everyone_outside_dev_mode_without_tokens(
+    client: TestClient, use_settings: SettingsOverride
+) -> None:
+    use_model(ModelAnswer(values=[]))
+    _ = use_settings(dev_mode=False)
+
+    assert client.post("/api/extract", json=REQUEST).status_code == 503
+
+
+def test_limits_requests_per_caller(client: TestClient, use_settings: SettingsOverride) -> None:
+    use_model(ModelAnswer(values=[]))
+    _ = use_settings(rate_limit_per_minute=2)
+
+    statuses = [client.post("/api/extract", json=REQUEST).status_code for _ in range(3)]
+
+    assert statuses == [200, 200, 429]
+
+
+def test_rejects_short_tokens_in_settings() -> None:
+    with pytest.raises(ValueError, match="at least 32"):
+        _ = Settings.model_validate({"api_tokens": "alice:short"}).tokens
