@@ -169,3 +169,10 @@ def test_limits_requests_per_caller(client: TestClient, use_settings: SettingsOv
 def test_rejects_short_tokens_in_settings() -> None:
     with pytest.raises(ValueError, match="at least 32"):
         _ = Settings.model_validate({"api_tokens": "alice:short"}).tokens
+
+
+def test_rejects_tokens_without_a_name_without_echoing_them() -> None:
+    with pytest.raises(ValueError, match="entry 1 has no name") as error:
+        _ = Settings.model_validate({"api_tokens": TOKEN}).tokens
+
+    assert TOKEN not in str(error.value)

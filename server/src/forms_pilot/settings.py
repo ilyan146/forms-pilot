@@ -28,14 +28,21 @@ class Settings(BaseSettings):
     def tokens(self) -> dict[str, str]:
         """Token to the name of the person it was issued to."""
         tokens: dict[str, str] = {}
-        for entry in filter(None, (part.strip() for part in self.api_tokens.split(","))):
-            name, separator, token = entry.partition(":")
-            if not separator or not name.strip() or len(token.strip()) < MIN_TOKEN_LENGTH:
+        entries = filter(None, (part.strip() for part in self.api_tokens.split(",")))
+        # Errors name the entry by position, never by content, so a token never reaches the logs.
+        for position, entry in enumerate(entries, start=1):
+            name, separator, token = (part.strip() for part in entry.partition(":"))
+            if not separator or not name:
                 raise ValueError(
-                    f"API_TOKENS entries must be name:token with a token of at least "
-                    f"{MIN_TOKEN_LENGTH} characters; check the entry for {name.strip() or '?'}."
+                    f"API_TOKENS entry {position} has no name; write it as name:token, "
+                    f"for example alice:<token>."
                 )
-            tokens[token.strip()] = name.strip()
+            if len(token) < MIN_TOKEN_LENGTH:
+                raise ValueError(
+                    f"API_TOKENS entry {position} ({name}) needs a token of at least "
+                    f"{MIN_TOKEN_LENGTH} characters."
+                )
+            tokens[token] = name
         return tokens
 
 
