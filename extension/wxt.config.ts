@@ -18,6 +18,11 @@ export default defineConfig({
       action: { default_title: "Open Forms Pilot" },
     };
   },
+  // `wxt` dev opens a fresh Chrome profile with the extension loaded. That needs
+  // the web-ext package; without it WXT silently falls back to manual loading.
+  webExt: {
+    startUrls: [`${DEFAULT_API_URL}/sample-form`],
+  },
   vite: () => ({
     plugins: [tailwindcss()],
   }),
