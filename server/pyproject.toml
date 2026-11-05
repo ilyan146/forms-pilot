@@ -5,6 +5,7 @@ description = "API that reads form values from images for the Forms Pilot browse
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.120",
+    "openai>=3.46.0",
     "pydantic-settings>=2.6",
     "uvicorn[standard]>=0.32",
 ]

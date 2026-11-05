@@ -14,6 +14,8 @@ It has two parts:
 
 ## Run locally
 
+Copy `.env.example` to `.env` and fill in an Azure OpenAI endpoint, key and a vision-capable chat deployment. Without them the API still starts, and `/api/extract` answers 503.
+
 ```powershell
 pnpm install
 uv sync --directory server
@@ -42,6 +44,14 @@ To add a form:
 3. Add hints for fields that need them, and list fields that must never be filled, such as a captcha or a consent box, in `ignore`.
 
 The extension never submits a form. Filling only changes field values.
+
+## How values are read
+
+`POST /api/extract` takes the scanned fields and the images. A vision model returns, for each field, a value, a status (`found`, `missing` or `ambiguous`), the text it read and which image it came from. The model is told to leave a field empty rather than guess.
+
+The server then checks every value with plain code: dates must exist and be `YYYY-MM-DD`, choices must be one the form offers, numbers must parse, and IBANs must pass their checksum. Anything that fails becomes an issue the user sees before filling.
+
+There is no confidence score. A model's own confidence is not a reliable measure of whether a value is right, so the side panel flags fields based on these checks and the model's status instead.
 
 ## Checks
 
