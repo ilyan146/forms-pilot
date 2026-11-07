@@ -1,4 +1,4 @@
-import type { ImageInput } from "@/lib/client";
+import type { DocumentInput, ImageInput } from "@/lib/client";
 
 /** The API accepts at most this many images per request. */
 export const MAX_IMAGES = 8;
@@ -8,11 +8,38 @@ export const MAX_IMAGES = 8;
 const MAX_SIDE = 2000;
 const JPEG_QUALITY = 0.85;
 
-export type PreparedImage = ImageInput & { id: string; name: string; previewUrl: string };
+export type PreparedImage = (ImageInput | DocumentInput) & { id: string; name: string; previewUrl?: string };
+
+const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const MAX_FILE_BYTES = 10_000_000;
+
+export async function prepareFile(file: File): Promise<PreparedImage> {
+  if (file.size > MAX_FILE_BYTES) throw new Error(`${file.name} exceeds the 10 MB file limit.`);
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const media_type = extension === "pdf" ? "application/pdf" : extension === "xlsx" ? XLSX_TYPE : undefined;
+  if (media_type) {
+    return { id: crypto.randomUUID(), name: file.name, media_type, data: await toBase64(file) };
+  }
+  return prepareImage(file);
+}
+
+export function extractionInputs(files: PreparedImage[]): { images: ImageInput[]; documents: DocumentInput[] } {
+  const images: ImageInput[] = [];
+  const documents: DocumentInput[] = [];
+  for (const file of files) {
+    const { media_type, data, name } = file;
+    if (media_type === "application/pdf" || media_type === XLSX_TYPE) {
+      documents.push({ media_type, data, name });
+    } else {
+      images.push({ media_type, data });
+    }
+  }
+  return { images, documents };
+}
 
 export async function prepareImage(file: File): Promise<PreparedImage> {
   if (!file.type.startsWith("image/")) {
-    throw new Error(`${file.name} is not an image. Use a photo, scan or screenshot.`);
+    throw new Error(`${file.name} is not supported. Use an image, PDF or .xlsx workbook.`);
   }
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
