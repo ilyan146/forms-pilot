@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 
 import { errorMessage, isUnauthorized } from "@/lib/api";
 import { extractFormValuesMutation } from "@/lib/client/@tanstack/react-query.gen";
-import type { ExtractedValue } from "@/lib/client";
-import { MAX_IMAGES, prepareImage, type PreparedImage } from "@/lib/images";
+import type { ExtractedValue, SourceInfo } from "@/lib/client";
+import { MAX_IMAGES, prepareFile, extractionInputs, type PreparedImage } from "@/lib/images";
 import { fillActiveTab, scanActiveTab } from "@/lib/messages";
 import { draftFrom, fillSummary, valuesToFill, type Draft } from "@/lib/review";
 
@@ -13,7 +13,7 @@ import { ImageDrop } from "./ImageDrop";
 import { ReviewList } from "./ReviewList";
 
 /** Values read for the form at `url`, and the user's edits of them. */
-type Review = { url: string; values: ExtractedValue[]; draft: Draft };
+type Review = { url: string; values: ExtractedValue[]; sources: SourceInfo[]; draft: Draft };
 
 const SCAN_KEY = ["scan"];
 
@@ -44,28 +44,28 @@ export function FormFlow({ onNeedToken }: { onNeedToken: () => void }) {
 
   async function addFiles(files: File[]) {
     const room = MAX_IMAGES - images.length;
-    if (files.length === 0 || room <= 0) return;
+    if (preparing || files.length === 0 || room <= 0) return;
     setPreparing(true);
     setImageError(undefined);
-    const results = await Promise.allSettled(files.slice(0, room).map(prepareImage));
+    const results = await Promise.allSettled(files.slice(0, room).map(prepareFile));
     const prepared = results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
     const failed = results.find((result) => result.status === "rejected");
     setImages((current) => [...current, ...prepared]);
     if (failed) setImageError(errorMessage(failed.reason));
-    else if (files.length > room) setImageError(`Only the first ${room} images were added.`);
+    else if (files.length > room) setImageError(`Only the first ${room} files were added.`);
     setPreparing(false);
   }
 
   function removeImage(id: string) {
     setImages((current) => {
       const removed = current.find((image) => image.id === id);
-      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
       return current.filter((image) => image.id !== id);
     });
   }
 
   function startOver() {
-    for (const image of images) URL.revokeObjectURL(image.previewUrl);
+    for (const image of images) if (image.previewUrl) URL.revokeObjectURL(image.previewUrl);
     setImages([]);
     setImageError(undefined);
     setReview(undefined);
@@ -99,6 +99,7 @@ export function FormFlow({ onNeedToken }: { onNeedToken: () => void }) {
         <ReviewList
           fields={form.fields}
           values={review.values}
+          sources={review.sources}
           draft={review.draft}
           outcomes={fill.data?.outcomes}
           onChange={(id, value) => setReview({ ...review, draft: { ...review.draft, [id]: value } })}
@@ -115,7 +116,7 @@ export function FormFlow({ onNeedToken }: { onNeedToken: () => void }) {
             {fill.isPending ? "Filling…" : fill.isSuccess ? "Fill again" : "Fill form"}
           </PrimaryButton>
           <div className="flex gap-2">
-            <SecondaryButton onClick={changeImages}>Change images</SecondaryButton>
+            <SecondaryButton onClick={changeImages}>Change files</SecondaryButton>
             <SecondaryButton onClick={startOver}>Start over</SecondaryButton>
           </div>
         </div>
@@ -128,11 +129,11 @@ export function FormFlow({ onNeedToken }: { onNeedToken: () => void }) {
       {
         body: {
           fields: form.fields,
-          images: images.map(({ media_type, data }) => ({ media_type, data })),
+          ...extractionInputs(images),
         },
       },
       {
-        onSuccess: ({ values }) => setReview({ url: form.url, values, draft: draftFrom(values) }),
+        onSuccess: ({ values, sources }) => setReview({ url: form.url, values, sources: sources ?? [], draft: draftFrom(values) }),
       },
     );
   }
@@ -140,7 +141,7 @@ export function FormFlow({ onNeedToken }: { onNeedToken: () => void }) {
   return (
     <>
       <p className="text-slate-600">
-        {form.profile ? `${form.profile.name}: ${form.fields.length} fields` : "Drop images to fill the form on this page."}
+        {form.profile ? `${form.profile.name}: ${form.fields.length} fields` : "Drop documents to fill the form on this page."}
       </p>
       <ImageDrop images={images} preparing={preparing} onAdd={(files) => void addFiles(files)} onRemove={removeImage} />
       {imageError && <p className="text-red-700">{imageError}</p>}
@@ -149,9 +150,9 @@ export function FormFlow({ onNeedToken }: { onNeedToken: () => void }) {
         <SecondaryButton onClick={onNeedToken}>Set your API token</SecondaryButton>
       )}
       <PrimaryButton disabled={images.length === 0 || preparing || extract.isPending} onClick={read}>
-        {extract.isPending ? "Reading images…" : "Read values"}
+        {extract.isPending ? "Reading documents…" : "Read values"}
       </PrimaryButton>
-      {images.length > 0 && !extract.isPending && <SecondaryButton onClick={startOver}>Clear images</SecondaryButton>}
+      {images.length > 0 && !extract.isPending && <SecondaryButton disabled={preparing} onClick={startOver}>Clear files</SecondaryButton>}
     </>
   );
 }
