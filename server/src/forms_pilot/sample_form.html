@@ -3,66 +3,176 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sample invoice registration</title>
+    <title>Sample customs declaration — General Information</title>
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; color: #0f172a; }
-      form { display: grid; gap: 0.9rem; }
-      label, legend { font-weight: 600; font-size: 0.9rem; }
-      input, select, textarea { display: block; width: 100%; padding: 0.4rem; margin-top: 0.25rem; box-sizing: border-box; }
-      input[type="radio"], input[type="checkbox"] { display: inline; width: auto; }
-      fieldset { border: 1px solid #cbd5e1; padding: 0.6rem; }
-      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 20px 12px; background: #f3f3f3; color: #444; font: 13px Arial, sans-serif; }
+      .sample-note { margin: 0 0 14px; color: #555; }
+      h1 { margin: 0 0 20px; color: #cb292b; font-size: 24px; font-weight: 400; }
+      main { padding: 12px 8px; background: white; }
+      .steps { display: flex; list-style: none; padding: 0; margin: 0 0 20px; }
+      .steps li { position: relative; flex: 1; text-align: center; color: #c53335; }
+      .steps li::before { content: ""; position: absolute; top: 23px; left: -50%; width: 100%; height: 5px; background: #d1d3d5; }
+      .steps li:first-child::before { display: none; }
+      .step-number { position: relative; display: block; width: 48px; height: 48px; margin: 0 auto 6px; border: 5px solid #d1d3d5; border-radius: 50%; background: white; color: #bbb; font-size: 30px; line-height: 38px; }
+      [aria-current="step"] .step-number { border-color: #cf292c; color: #cf292c; }
+      .notice { padding: 12px 16px; margin-bottom: 14px; background: #dbeef5; border: 1px solid #c9e5ee; color: #477f97; }
+      form { display: grid; gap: 20px; }
+      fieldset { min-width: 0; margin: 0; padding: 10px 12px; border: 1px solid #c7c7c7; }
+      legend { padding: 0 0 6px; color: #9c1719; font-size: 14px; font-weight: bold; }
+      .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 32px; }
+      .field { display: grid; grid-template-columns: 145px minmax(0, 1fr); align-items: center; gap: 6px; }
+      .field > label { text-align: right; }
+      .required { color: #ca272a; }
+      input, select { width: 100%; min-width: 0; height: 29px; border: 1px solid #d5d5d5; padding: 4px 6px; background: white; color: #555; font: inherit; }
+      input:focus, select:focus { outline: 2px solid #cf8d46; outline-offset: 1px; }
+      input[readonly], select:disabled { background: #f4f4f4; color: #888; }
+      .lookup { display: flex; align-items: center; }
+      .lookup input { border-right: 0; }
+      button { border: 0; border-radius: 4px; background: #444; color: white; padding: 6px 12px; font: inherit; cursor: pointer; }
+      .lookup button { height: 29px; width: 34px; padding: 4px; border-radius: 0 4px 4px 0; font-size: 17px; }
+      .party-tools { margin: 6px 0 0 151px; }
+      .party-tools label { display: inline-flex; align-items: center; gap: 4px; }
+      input[type="checkbox"] { width: auto; height: auto; }
+      .subtext { display: block; margin-top: 3px; }
+      .next { justify-self: center; min-width: 130px; }
+      #sample-status { margin: 0; text-align: center; color: #477f97; }
+      dialog { max-width: 440px; border: 1px solid #aaa; border-radius: 6px; padding: 20px; }
+      dialog::backdrop { background: #0005; }
+      @media (max-width: 850px) { .fields { grid-template-columns: 1fr; } }
+      @media (max-width: 480px) {
+        body { padding: 12px 6px; }
+        .field { grid-template-columns: 1fr; }
+        .field > label { text-align: left; }
+        .party-tools { margin-left: 0; }
+        .steps { font-size: 11px; }
+      }
     </style>
   </head>
   <body>
-    <h1>Invoice registration</h1>
-    <p>A stand-in for the real target form. It uses the label styles real forms use.</p>
-    <form id="invoice" onsubmit="event.preventDefault(); alert('Submitted');">
-      <label for="supplier_name">Supplier name *</label>
-      <input id="supplier_name" required />
-
-      <div class="row">
-        <label>Invoice number * <input name="invoice_number" required /></label>
-        <label>PO reference <input name="po_reference" /></label>
-      </div>
-
-      <div class="row">
-        <div>
-          <span id="invoice_date_label">Invoice date</span>
-          <input id="invoice_date" type="date" aria-labelledby="invoice_date_label" required />
-        </div>
-        <label>Due date <input id="due_date" type="date" /></label>
-      </div>
-
-      <div class="row">
-        <label>Currency
-          <select id="currency" required>
-            <option value="">Choose…</option>
-            <option value="EUR">Euro</option>
-            <option value="USD">US dollar</option>
-            <option value="AED">UAE dirham</option>
-          </select>
-        </label>
-        <input id="total_amount" type="number" step="0.01" aria-label="Total amount (incl. VAT)" required />
-      </div>
-
-      <input id="vat_number" placeholder="Supplier VAT number" />
-      <label for="iban">IBAN</label>
-      <input id="iban" />
-
-      <fieldset>
-        <legend>Payment terms</legend>
-        <label><input type="radio" name="payment_terms" value="14" /> 14 days</label>
-        <label><input type="radio" name="payment_terms" value="30" /> 30 days</label>
-        <label><input type="radio" name="payment_terms" value="60" /> 60 days</label>
-      </fieldset>
-
-      <label><input type="checkbox" id="urgent" /> Urgent payment</label>
-      <label for="notes">Notes</label>
-      <textarea id="notes" rows="3"></textarea>
-
-      <input type="hidden" name="csrf" value="not-a-field" />
-      <button type="submit">Submit</button>
-    </form>
+    <p class="sample-note">Forms Pilot demo — a sample customs declaration inspired by the reference screen. Not connected to Dubai Customs.</p>
+    <h1>New</h1>
+    <main>
+      <ol class="steps" aria-label="Declaration steps">
+        <li aria-current="step"><span class="step-number">1</span>General Information</li>
+        <li><span class="step-number">2</span>Shipping Details</li>
+        <li><span class="step-number">3</span>Invoice Details</li>
+        <li><span class="step-number">4</span>Payment Details</li>
+      </ol>
+      <div class="notice">Demo mode: no UAE Pass login is required. Add your invoice, customs PDF and Excel workbook in the Forms Pilot side panel, review the values, then fill this sample.</div>
+      <form id="customs-declaration">
+        <fieldset>
+          <legend>Declaration Header</legend>
+          <div class="fields">
+            <div class="field">
+              <label for="regime_type">Regime Type: <span class="required">*</span></label>
+              <select id="regime_type" required><option value="transit">Transit</option><option value="import">Import</option><option value="export">Export</option></select>
+            </div>
+            <div class="field">
+              <label for="declaration_type">Declaration Type: <span class="required">*</span></label>
+              <select id="declaration_type" required>
+                <option value="fz-transit">FZ Transit In from GCC and other Emirates FZ and GCC Local Market</option>
+                <option value="import-local">Import to Local from FZ</option>
+                <option value="export-fz">Export from FZ</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cargo_channel">Cargo Channel (Inbound): <span class="required">*</span></label>
+              <select id="cargo_channel" required><option value="land">Land</option><option value="sea">Sea</option><option value="air">Air</option></select>
+            </div>
+            <div class="field">
+              <label for="client_reference">Client's Dec. Ref. No.: <span class="required">*</span></label>
+              <input id="client_reference" required />
+            </div>
+            <div class="field">
+              <label for="purpose">Purpose</label>
+              <select id="purpose"><option value="">[Please Select]</option><option value="commercial">Commercial</option><option value="personal">Personal</option><option value="exhibition">Exhibition</option></select>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Person/Parties</legend>
+          <div class="fields">
+            <div>
+              <div class="field">
+                <label for="exporter_code">Exporter's Code:</label>
+                <div class="lookup"><input id="exporter_code" /><button type="button" data-lookup="Exporter" aria-label="Look up exporter code">⌕</button></div>
+              </div>
+              <div class="party-tools">
+                <span class="subtext">— OR —</span>
+                <button type="button" data-lookup="Overseas customer">Add Overseas Customer</button>
+                <label><input id="mra_aeo" type="checkbox" /> MRA AEO</label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="importer_code">Importer's Code: <span class="required">*</span></label>
+              <div><input id="importer_code" value="AE-1062347" readonly required aria-describedby="importer_name" /><span class="subtext" id="importer_name">AUTO RANCH FZE</span></div>
+            </div>
+            <div class="field">
+              <label for="agent_code">Agent's Code:</label>
+              <div class="lookup"><input id="agent_code" /><button type="button" data-lookup="Agent" aria-label="Look up agent code">⌕</button></div>
+            </div>
+            <div class="field">
+              <label for="cargo_handler_code">Cargo Handler's Code:</label>
+              <div class="lookup"><input id="cargo_handler_code" /><button type="button" data-lookup="Cargo handler" aria-label="Look up cargo handler code">⌕</button></div>
+            </div>
+            <div></div>
+            <div class="field">
+              <label for="trade_type">Trade Type:</label>
+              <select id="trade_type" disabled><option value="non-ecommerce">Non E-Commerce</option></select>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Import/Export Entity</legend>
+          <div class="fields">
+            <div class="field">
+              <label for="importing_entity">Importing CW/FZ: <span class="required">*</span></label>
+              <div class="lookup"><input id="importing_entity" required /><button type="button" data-lookup="Importing CW/FZ" aria-label="Look up importing entity">⌕</button></div>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Availability of Required Documents</legend>
+          <div class="fields">
+            <div class="field">
+              <label for="invoice_available">Invoice: <span class="required">*</span></label>
+              <select id="invoice_available" required><option value="">[Please Select]</option><option value="available">Available</option><option value="not-available">Not Available</option></select>
+            </div>
+            <div class="field">
+              <label for="packing_list_available">Packing List: <span class="required">*</span></label>
+              <select id="packing_list_available" required><option value="">[Please Select]</option><option value="available">Available</option><option value="not-available">Not Available</option></select>
+            </div>
+            <div class="field">
+              <label for="origin_certificate_available">Cert. of Origin: <span class="required">*</span></label>
+              <select id="origin_certificate_available" required><option value="">[Please Select]</option><option value="available">Available</option><option value="not-available">Not Available</option></select>
+            </div>
+          </div>
+        </fieldset>
+        <input type="hidden" name="csrf" value="demo-only" />
+        <button class="next" type="submit">Next ❯</button>
+        <p id="sample-status" role="status" aria-live="polite"></p>
+      </form>
+    </main>
+    <dialog id="lookup-help">
+      <h2 id="lookup-title">Sample lookup</h2>
+      <p>This demo has no customs directory. Close this message and enter a code or entity name supplied by your documents.</p>
+      <button type="button" id="close-lookup">Close</button>
+    </dialog>
+    <script>
+      const form = document.getElementById("customs-declaration");
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        document.getElementById("sample-status").textContent = "General Information checked. This demo includes only step 1; nothing was sent to customs.";
+      });
+      const dialog = document.getElementById("lookup-help");
+      document.querySelectorAll("[data-lookup]").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.getElementById("lookup-title").textContent = button.dataset.lookup + " — sample lookup";
+          dialog.showModal();
+        });
+      });
+      document.getElementById("close-lookup").addEventListener("click", () => dialog.close());
+    </script>
   </body>
 </html>

@@ -15,7 +15,9 @@ def test_sample_form_is_served_as_html_in_dev_mode(use_settings: SettingsOverrid
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")
-    assert 'id="invoice"' in response.text
+    assert 'id="customs-declaration"' in response.text
+    assert "Declaration Header" in response.text
+    assert "Availability of Required Documents" in response.text
 
 
 def test_sample_form_is_hidden_outside_dev_mode(use_settings: SettingsOverride) -> None:
