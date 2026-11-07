@@ -5,7 +5,7 @@ FastAPI turns these into the OpenAPI spec that the extension's client is generat
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 FieldKind = Literal[
     "text", "textarea", "number", "date", "email", "tel", "select", "checkbox", "radio"
@@ -15,6 +15,8 @@ ValueStatus = Literal["found", "missing", "ambiguous"]
 MAX_IMAGES = 8
 # Base64 grows data by a third, so this allows images of about 5 MB.
 MAX_IMAGE_BASE64_CHARS = 7_000_000
+MAX_DOCUMENTS = 8
+MAX_DOCUMENT_BYTES = 10_000_000
 
 
 class FormField(BaseModel):
@@ -38,9 +40,34 @@ class ImageInput(BaseModel):
     ]
 
 
+class DocumentInput(BaseModel):
+    name: Annotated[str, Field(min_length=1, max_length=255)]
+    media_type: Literal[
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ]
+    data: Annotated[
+        str,
+        Field(max_length=13_333_336, pattern=r"^[A-Za-z0-9+/]+={0,2}$"),
+    ]
+
+
+class SourceInfo(BaseModel):
+    name: str
+    page: int | None = None
+    sheet: str | None = None
+
+
 class ExtractRequest(BaseModel):
     fields: Annotated[list[FormField], Field(min_length=1, max_length=150)]
-    images: Annotated[list[ImageInput], Field(min_length=1, max_length=MAX_IMAGES)]
+    images: Annotated[list[ImageInput], Field(max_length=MAX_IMAGES)] = []
+    documents: Annotated[list[DocumentInput], Field(max_length=MAX_DOCUMENTS)] = []
+
+    @model_validator(mode="after")
+    def require_sources(self) -> "ExtractRequest":
+        if not 1 <= len(self.images) + len(self.documents) <= MAX_DOCUMENTS:
+            raise ValueError("Provide between 1 and 8 images, PDFs or Excel workbooks.")
+        return self
 
 
 class ExtractedValue(BaseModel):
@@ -48,12 +75,15 @@ class ExtractedValue(BaseModel):
     value: str = Field(description="Empty when nothing was found. Checked against the field.")
     status: ValueStatus
     evidence: str | None = Field(description="The text the model read for this value.")
-    image_index: int | None = Field(description="Which image the evidence came from, from 0.")
+    image_index: int | None = Field(
+        description="Index in response.sources (image, PDF page or Excel sheet), from 0."
+    )
     issues: list[str] = Field(description="Problems found by checks. Empty means none were found.")
 
 
 class ExtractResponse(BaseModel):
     values: list[ExtractedValue]
+    sources: list[SourceInfo] = []
 
 
 # What the model must return. Structured output holds it to this exact shape, so

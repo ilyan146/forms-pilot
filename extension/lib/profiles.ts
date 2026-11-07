@@ -16,20 +16,28 @@ export type FormProfile = {
   ignore?: string[];
 };
 
-const sampleInvoice: FormProfile = {
-  id: "sample-invoice",
-  name: "Sample invoice registration",
+const sampleCustoms: FormProfile = {
+  id: "sample-customs",
+  name: "Sample customs declaration — General Information",
   matches: ["http://localhost/sample-form*", "http://127.0.0.1/sample-form*"],
   fields: {
-    supplier_name: { hint: "The company that issued the invoice." },
-    invoice_date: { hint: "Return as YYYY-MM-DD." },
-    due_date: { hint: "Return as YYYY-MM-DD." },
-    total_amount: { hint: "Total including VAT, digits with a dot as decimal separator." },
-    iban: { hint: "The supplier's bank account, without spaces." },
+    regime_type: { hint: "Use only an explicitly stated customs regime. Do not infer it from the filename." },
+    declaration_type: { hint: "Use an explicitly stated declaration type matching a choice. Do not invent a customs classification." },
+    cargo_channel: { hint: "Inbound transport mode: ROAD corresponds to Land. Do not use vehicle model or port name to guess." },
+    client_reference: { hint: "The client's own declaration reference, only if explicitly labelled. Not an invoice number, BOE, VIN or customs declaration number." },
+    purpose: { hint: "The explicitly stated shipment purpose. A Commercial licence alone does not establish the purpose." },
+    exporter_code: { hint: "The exporter's customs registration code, not the company name, licence number, VIN or BOE." },
+    agent_code: { hint: "The clearing agent's explicitly labelled customs code. Do not substitute their name or licence number." },
+    cargo_handler_code: { hint: "The cargo handler's explicitly labelled registration code. Do not use an engine number or HS code." },
+    importing_entity: { hint: "The destination importing customs warehouse or free zone (CW/FZ), not the exit port or exporter's address." },
+    invoice_available: { hint: "Available only if an invoice is present among the uploaded sources. Otherwise leave missing; do not assume Not Available." },
+    packing_list_available: { hint: "Available only if a source is explicitly identified as a packing list. A vehicle spreadsheet alone is insufficient. Otherwise leave missing." },
+    origin_certificate_available: { hint: "Available only if a certificate of origin is present. A Country/Origin column is not a certificate. Otherwise leave missing." },
   },
+  ignore: ["mra_aeo"],
 };
 
-export const PROFILES: FormProfile[] = [sampleInvoice];
+export const PROFILES: FormProfile[] = [sampleCustoms];
 
 export const PROFILE_MATCHES = PROFILES.flatMap((profile) => profile.matches);
 

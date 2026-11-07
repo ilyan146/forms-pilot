@@ -29,7 +29,7 @@ export function ImageDrop({ images, preparing, onAdd, onRemove }: Props) {
     <section className="flex flex-col gap-2" onPaste={onPaste}>
       <button
         type="button"
-        disabled={full}
+        disabled={full || preparing}
         onClick={() => input.current?.click()}
         onDragOver={(event) => {
           event.preventDefault();
@@ -42,15 +42,15 @@ export function ImageDrop({ images, preparing, onAdd, onRemove }: Props) {
         }`}
       >
         {full
-          ? `${MAX_IMAGES} images is the limit.`
+          ? `${MAX_IMAGES} files is the limit.`
           : preparing
-            ? "Preparing images…"
-            : "Drop images here, paste, or click to choose."}
+            ? "Preparing files…"
+            : "Drop images, PDFs or Excel (.xlsx) here, paste, or click to choose."}
       </button>
       <input
         ref={input}
         type="file"
-        accept="image/*"
+        accept="image/*,.pdf,.xlsx"
         multiple
         hidden
         onChange={(event) => {
@@ -63,11 +63,13 @@ export function ImageDrop({ images, preparing, onAdd, onRemove }: Props) {
         <ul className="grid grid-cols-4 gap-2">
           {images.map((image, index) => (
             <li key={image.id} className="relative">
-              <img
+              {image.previewUrl ? <img
                 src={image.previewUrl}
                 alt={`Image ${index + 1}: ${image.name}`}
                 className="aspect-square w-full rounded border object-cover"
-              />
+              /> : <div className="flex aspect-square items-center justify-center rounded border bg-white p-1 text-center text-xs break-all" title={image.name}>
+                {image.name}
+              </div>}
               <span className="absolute bottom-0.5 left-0.5 rounded bg-white/90 px-1 text-xs">
                 {index + 1}
               </span>

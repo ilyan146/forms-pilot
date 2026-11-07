@@ -1,16 +1,17 @@
-import type { ExtractedValue } from "@/lib/client";
+import type { ExtractedValue, SourceInfo } from "@/lib/client";
 import type { FillOutcome, FormField } from "@/lib/form/schema";
 import { isEdited, needsAttention, outcomeText, type Draft } from "@/lib/review";
 
 type Props = {
   fields: FormField[];
   values: ExtractedValue[];
+  sources: SourceInfo[];
   draft: Draft;
   outcomes: FillOutcome[] | undefined;
   onChange: (id: string, value: string) => void;
 };
 
-export function ReviewList({ fields, values, draft, outcomes, onChange }: Props) {
+export function ReviewList({ fields, values, sources, draft, outcomes, onChange }: Props) {
   const attention = fields.filter((field) =>
     needsAttention(byId(values, field.id), draft[field.id] ?? ""),
   ).length;
@@ -46,7 +47,7 @@ export function ReviewList({ fields, values, draft, outcomes, onChange }: Props)
               {extracted?.evidence && (
                 <p className="text-xs text-slate-500">
                   Read “{extracted.evidence}”
-                  {extracted.image_index != null && ` in image ${extracted.image_index + 1}`}
+                  {extracted.image_index != null && ` in ${sourceLabel(sources[extracted.image_index], extracted.image_index)}`}
                 </p>
               )}
               {flagged &&
@@ -56,7 +57,7 @@ export function ReviewList({ fields, values, draft, outcomes, onChange }: Props)
                   </p>
                 ))}
               {flagged && extracted?.status === "ambiguous" && extracted.issues.length === 0 && (
-                <p className="text-xs text-amber-800">The images show more than one candidate.</p>
+                <p className="text-xs text-amber-800">The documents show more than one candidate.</p>
               )}
               {outcome && (
                 <p className={`text-xs ${outcome.status === "filled" ? "text-green-700" : "text-red-700"}`}>
@@ -128,4 +129,11 @@ function FieldInput({
 
 function byId(values: ExtractedValue[], id: string) {
   return values.find((value) => value.field_id === id);
+}
+
+function sourceLabel(source: SourceInfo | undefined, index: number): string {
+  if (!source) return `source ${index + 1}`;
+  if (source.page != null) return `${source.name}, page ${source.page}`;
+  if (source.sheet != null) return `${source.name}, sheet ${source.sheet}`;
+  return source.name;
 }

@@ -1,6 +1,6 @@
 # forms-pilot
 
-Forms Pilot fills a repetitive web form from images. Open the side panel next to the form, drop in photos or scans, review the values it found, then fill the form. It never submits the form for you.
+Forms Pilot fills a repetitive web form from images, PDFs and Excel workbooks. Open the side panel next to the form, drop in your documents, review the values it found, then fill the form. It never submits the form for you.
 
 It has two parts:
 
@@ -35,7 +35,9 @@ To load a production build by hand, run `pnpm build`, open `chrome://extensions`
 
 ### Try it on the sample form
 
-With the API running, open <http://localhost:8000/sample-form> and open the Forms Pilot side panel from the toolbar. Drop a photo or screenshot of an invoice, choose **Read values**, check the flagged fields and choose **Fill form**. The extension never submits the form; you do that yourself.
+With the API running, open <http://localhost:8000/sample-form> and open the Forms Pilot side panel from the toolbar. The sample resembles the **General Information** step of a customs declaration, with Declaration Header, Person/Parties, Import/Export Entity and Required Documents sections. Drop your invoice/customs PDFs and Excel workbook, choose **Read values**, check the flagged fields and choose **Fill form**.
+
+The sample defaults to Transit and Land, with a read-only sample importer and disabled trade type, like the reference screen. Customs registration codes and the client's reference stay empty when the documents do not explicitly provide them; a BOE number is not a client reference. MRA AEO is left for manual selection. Document availability is flagged for review when an invoice, packing list or certificate cannot be identified. **Next** checks required fields locally and displays a demo message; only step 1 is implemented and nothing is sent to customs. Lookup buttons explain the demo's manual-entry behaviour.
 
 ## Form profiles
 
@@ -50,6 +52,39 @@ To add a form:
 The extension never submits a form. Filling only changes field values.
 
 ## How values are read
+
+### PDF and Excel documents
+
+The file picker and drop area accept images, `.pdf` and `.xlsx` files together (up to
+8 files, 10 MB per file). Excel documents and PDFs are uploaded to the API for
+in-memory parsing; no uploaded files are saved by the application.
+
+- **PDF:** each page is rendered for the vision model, including scanned PDFs with
+  no selectable text. Evidence refers to the filename and page number.
+- **Excel:** nonempty sheets are parsed directly with openpyxl. Cell coordinates,
+  headers and row boundaries are preserved, including blank columns. Evidence
+  refers to the filename and sheet. Formula cells use cached values; formulas are
+  never executed. Save/recalculate the workbook in Excel before uploading if it
+  relies on formulas. Legacy `.xls` and password-protected files are unsupported.
+
+For the recurring vehicle invoice/customs layout, the model reads headers such as
+`Model`, `Moyr`, `VIN`, `Engine`, `COLOUR`, `Country`, `HS.CODE`, `WEIGHT`, `AMOUNT`
+and `BOE`. It is instructed to match rows across files by VIN rather than row order,
+keep each vehicle's values together and flag disagreements. Add vehicle-specific
+hints to your form profile when the target form has separate fields per vehicle;
+an unspecified vehicle field with several candidates needs review. Excel parsing
+is deterministic; mapping cells and scanned PDF values to form fields still uses
+the configured Azure model.
+
+The API bounds parsing to 24 sources (images, PDF pages and nonempty Excel sheets),
+20,000 workbook cells, 150,000 parsed text characters and 30 MB of document bytes
+per request. A workbook's expanded ZIP content is limited to 30 MB. Oversized or
+damaged documents return a readable error before the model is called.
+
+`POST /api/extract` accepts optional `documents` alongside the existing `images`:
+each document has `name`, `media_type` and base64 `data`. The response adds
+`sources`; the existing `image_index` property now indexes that list, so older
+image-only requests remain supported.
 
 `POST /api/extract` takes the scanned fields and the images. A vision model returns, for each field, a value, a status (`found`, `missing` or `ambiguous`), the text it read and which image it came from. The model is told to leave a field empty rather than guess.
 

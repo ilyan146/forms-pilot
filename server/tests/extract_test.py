@@ -7,8 +7,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from forms_pilot.api.caller import reset_rate_limits
+from forms_pilot.extraction.documents import Source
 from forms_pilot.extraction.model import get_extractor
-from forms_pilot.extraction.schema import FormField, ImageInput, ModelAnswer, ModelValue
+from forms_pilot.extraction.schema import FormField, ModelAnswer, ModelValue
 from forms_pilot.main import app
 from forms_pilot.settings import Settings
 
@@ -36,10 +37,10 @@ def client(use_settings: SettingsOverride):
     app.dependency_overrides.clear()
 
 
-def use_model(answer: ModelAnswer | Exception) -> list[tuple[list[FormField], list[ImageInput]]]:
-    calls: list[tuple[list[FormField], list[ImageInput]]] = []
+def use_model(answer: ModelAnswer | Exception) -> list[tuple[list[FormField], list[Source]]]:
+    calls: list[tuple[list[FormField], list[Source]]] = []
 
-    async def fake(fields: list[FormField], images: list[ImageInput]) -> ModelAnswer:
+    async def fake(fields: list[FormField], images: list[Source]) -> ModelAnswer:
         calls.append((fields, images))
         if isinstance(answer, Exception):
             raise answer
@@ -68,6 +69,7 @@ def test_returns_checked_values_for_every_requested_field(client: TestClient) ->
 
     assert response.status_code == 200
     assert response.json() == {
+        "sources": [{"name": "Image 1", "page": None, "sheet": None}],
         "values": [
             {
                 "field_id": "supplier_name",
@@ -85,7 +87,7 @@ def test_returns_checked_values_for_every_requested_field(client: TestClient) ->
                 "image_index": 0,
                 "issues": [],
             },
-        ]
+        ],
     }
     assert [field.id for field in calls[0][0]] == ["supplier_name", "currency"]
 
