@@ -35,7 +35,9 @@ To load a production build by hand, run `pnpm build`, open `chrome://extensions`
 
 ### Try it on the sample form
 
-With the API running, open <http://localhost:8000/sample-form> and open the Forms Pilot side panel from the toolbar. Drop a photo or screenshot of an invoice, choose **Read values**, check the flagged fields and choose **Fill form**. The extension never submits the form; you do that yourself.
+With the API running, open <http://localhost:8000/sample-form> and open the Forms Pilot side panel from the toolbar. The sample resembles the **General Information** step of a customs declaration, with Declaration Header, Person/Parties, Import/Export Entity and Required Documents sections. Drop your invoice/customs PDFs and Excel workbook, choose **Read values**, check the flagged fields and choose **Fill form**.
+
+The sample defaults to Transit and Land, with a read-only sample importer and disabled trade type, like the reference screen. Customs registration codes and the client's reference stay empty when the documents do not explicitly provide them; a BOE number is not a client reference. MRA AEO is left for manual selection. Document availability is flagged for review when an invoice, packing list or certificate cannot be identified. **Next** checks required fields locally and displays a demo message; only step 1 is implemented and nothing is sent to customs. Lookup buttons explain the demo's manual-entry behaviour.
 
 ## Form profiles
 
